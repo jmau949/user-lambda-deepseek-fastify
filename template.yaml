@@ -1,0 +1,195 @@
+AWSTemplateFormatVersion: '2010-09-09'  
+Transform: AWS::Serverless-2016-10-31  
+Description: Fastify API with AWS SAM  
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues:
+      - dev
+      - staging
+      - production
+    Description: Environment type
+  
+  CognitoUserPoolId:
+    Type: String
+    Default: ''
+    Description: Cognito User Pool ID
+  
+  CognitoClientId:
+    Type: String
+    Default: ''
+    Description: Cognito Client ID
+  
+  CognitoClientSecret:
+    Type: String
+    Default: ''
+    Description: Cognito Client Secret
+    
+  DomainName:
+    Type: String
+    Default: api.jonathanmau.com
+    Description: Custom domain name for API
+  
+  HostedZoneId:
+    Type: String
+    Description: Route 53 Hosted Zone ID for jonathanmau.com domain
+    
+  SentryDsn:
+    Type: String
+    Default: ''
+    Description: Sentry DSN
+    
+  SentryLambdaLayerArn:
+    Type: String
+    Default: ''
+    Description: Sentry Lambda Layer ARN
+    
+  ApiGatewayName:
+    Type: String
+    Default: 'jonathanmau-api'
+    Description: Name for the API Gateway (should remain consistent across deployments)
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 128
+    Environment:
+      Variables:
+        NODE_ENV: !Ref Environment
+        PORT: 3010
+        AWS_COGNITO_USER_POOL_ID: !Ref CognitoUserPoolId
+        AWS_COGNITO_CLIENT_ID: !Ref CognitoClientId
+        AWS_COGNITO_CLIENT_SECRET: !Ref CognitoClientSecret
+        USE_AWS_CREDENTIALS: false
+        SENTRY_DSN: !Ref SentryDsn
+
+Resources:
+  # Create a new ACM Certificate for the subdomain
+  ApiCertificate:
+    Type: AWS::CertificateManager::Certificate
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      DomainName: !Ref DomainName
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !Ref DomainName
+          HostedZoneId: !Ref HostedZoneId
+
+  FastifyApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./dist
+      Handler: lambda.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - arm64
+      MemorySize: 1024
+      Layers:
+        - !Ref SentryLambdaLayerArn
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+            RestApiId: !Ref ApiGateway
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:SignUp
+                - cognito-idp:AdminUpdateUserAttributes
+                - cognito-idp:ConfirmSignUp
+                - cognito-idp:GetUser
+                - cognito-idp:InitiateAuth
+                - cognito-idp:ForgotPassword
+                - cognito-idp:ConfirmForgotPassword
+                - cognito-idp:ResendConfirmationCode
+              Resource: 
+                - !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}"
+                - !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}/client/*"
+
+  # Lambda Log Group with 21-day retention
+  FastifyApiFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${FastifyApiFunction}"
+      RetentionInDays: 30
+
+  # API Gateway with REST API - using logical IDs that stay consistent
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      EndpointConfiguration:
+        Type: REGIONAL
+      Name: !Ref ApiGatewayName
+
+  # Create a separate custom domain name resource for API Gateway
+  ApiGatewayDomainName:
+    Type: AWS::ApiGateway::DomainName
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      DomainName: !Ref DomainName
+      RegionalCertificateArn: !Ref ApiCertificate
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  # Create a base path mapping to connect the API Gateway to the custom domain
+  ApiGatewayBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    DependsOn:
+      - ApiGateway
+      - ApiGatewayDomainName
+    Properties:
+      DomainName: !Ref DomainName
+      RestApiId: !Ref ApiGateway
+      Stage: !Ref ApiGateway.Stage  # Use the stage managed by SAM
+
+  # DNS Record for API Subdomain - with retention policy to keep it across rebuilds
+  ApiDnsRecord:
+    Type: AWS::Route53::RecordSet
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    DependsOn: ApiGatewayDomainName
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt ApiGatewayDomainName.RegionalDomainName
+        HostedZoneId: !GetAtt ApiGatewayDomainName.RegionalHostedZoneId
+
+Outputs:
+  FastifyApi:
+    Description: API Gateway endpoint URL for your Fastify API
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  
+  CustomDomainUrl:
+    Description: Custom domain URL for your API
+    Value: !Sub "https://${DomainName}/"
+  
+  FastifyApiFunction:
+    Description: Lambda Function ARN
+    Value: !GetAtt FastifyApiFunction.Arn
+  
+  ApiCertificateArn:
+    Description: ARN of the newly created ACM Certificate
+    Value: !Ref ApiCertificate
+    
+  ApiHostedZoneId:
+    Description: Hosted Zone ID for the API Gateway domain
+    Value: !GetAtt ApiGatewayDomainName.RegionalHostedZoneId
+    
+  ApiGatewayDomainNameOutput:
+    Description: Domain name for the API Gateway
+    Value: !GetAtt ApiGatewayDomainName.RegionalDomainName
