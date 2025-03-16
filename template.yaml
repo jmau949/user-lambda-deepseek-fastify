@@ -12,6 +12,11 @@ Parameters:
       - production
     Description: Environment type
   
+  Project:
+    Type: String
+    Default: deepseek
+    Description: Project name for resource tagging
+  
   CognitoUserPoolId:
     Type: String
     Default: ''
@@ -64,6 +69,9 @@ Globals:
         AWS_COGNITO_CLIENT_SECRET: !Ref CognitoClientSecret
         USE_AWS_CREDENTIALS: false
         SENTRY_DSN: !Ref SentryDsn
+    Tags:
+      project: !Ref Project
+      environment: !Ref Environment
 
 Resources:
   # Create a new ACM Certificate for the subdomain
@@ -77,6 +85,11 @@ Resources:
       DomainValidationOptions:
         - DomainName: !Ref DomainName
           HostedZoneId: !Ref HostedZoneId
+      Tags:
+        - Key: project
+          Value: !Ref Project
+        - Key: environment
+          Value: !Ref Environment
 
   FastifyApiFunction:
     Type: AWS::Serverless::Function
@@ -113,8 +126,11 @@ Resources:
               Resource: 
                 - !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}"
                 - !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}/client/*"
+      Tags:
+        project: !Ref Project
+        environment: !Ref Environment
 
-  # Lambda Log Group with 21-day retention
+  # Lambda Log Group with 30-day retention
   FastifyApiFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     DeletionPolicy: Retain
@@ -122,6 +138,11 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/lambda/${FastifyApiFunction}"
       RetentionInDays: 30
+      Tags:
+        - Key: project
+          Value: !Ref Project
+        - Key: environment
+          Value: !Ref Environment
 
   # API Gateway with REST API - using logical IDs that stay consistent
   ApiGateway:
@@ -131,6 +152,9 @@ Resources:
       EndpointConfiguration:
         Type: REGIONAL
       Name: !Ref ApiGatewayName
+      Tags:
+        project: !Ref Project
+        environment: !Ref Environment
 
   # Create a separate custom domain name resource for API Gateway
   ApiGatewayDomainName:
@@ -143,6 +167,11 @@ Resources:
       EndpointConfiguration:
         Types:
           - REGIONAL
+      Tags:
+        - Key: project
+          Value: !Ref Project
+        - Key: environment
+          Value: !Ref Environment
 
   # Create a base path mapping to connect the API Gateway to the custom domain
   ApiGatewayBasePathMapping:
