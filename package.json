@@ -4,12 +4,11 @@
   "main": "src/server.ts",
   "scripts": {
     "dev": "cross-env nodemon --exec ts-node ./src/server.ts",
-    "build": "tsc",
+    "build": "npm run build:lambda && sam build",
     "start": "node ./dist/server",
     "test": "echo \"Error: no test specified\" && exit 0",
     "build:lambda": "node esbuild.config.js",
     "sam:local": "sam local start-api --env-vars env.json",
-    "sam:build": "npm run build:lambda && sam build",
     "sam:deploy-guided": "sam deploy --guided",
     "sam:deploy": "sam deploy --config-env production"
   },
