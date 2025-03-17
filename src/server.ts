@@ -61,6 +61,7 @@ class Application {
         sameSite: "strict",
         path: "/",
         maxAge: 60 * 60 * 24 * 7, // 1 week
+        domain: ".jonathanmau.com",
       },
     });
 

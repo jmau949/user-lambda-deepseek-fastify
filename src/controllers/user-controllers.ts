@@ -49,39 +49,6 @@ export const userController: FastifyPluginCallback = (server, options, done) => 
       }
     }
   );
-  server.get(
-    "/get-auth-token",
-    {
-      schema: {
-        response: userGetAuth.response,
-      },
-    },
-    async (request, reply) => {
-      try {
-        const allowedOrigins = [
-          "https://ai.jonathanmau.com",
-          "https://www.ai.jonathanmau.com",
-          "https://api.jonathanmau.com",
-        ];
-        console.log("requestOrigin", request.headers.origin);
-        console.log("process.env.NODE_ENV", process.env.NODE_ENV);
-        if (process.env.NODE_ENV === "development") {
-          allowedOrigins.push("http://localhost:5173");
-        }
-        const requestOrigin = request.headers.origin;
-        console.log("requestOrigin11111", requestOrigin);
-        console.log("allowedOrigins222222", allowedOrigins);
-        if (requestOrigin && !allowedOrigins.includes(requestOrigin)) {
-          return reply.status(403).send({ error: "Forbidden" }); // Proper response handling
-        }
-        console.log("HERERERE");
-        const authToken = request.cookies.authToken;
-        return reply.send({ authToken });
-      } catch (error) {
-        return sendErrorResponse(reply, error);
-      }
-    }
-  );
 
   // **User signup**
   server.post<{ Body: IUserBody }>(
@@ -145,6 +112,7 @@ export const userController: FastifyPluginCallback = (server, options, done) => 
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict" as "strict" | "lax" | "none",
         path: "/",
+        domain: ".jonathanmau.com",
       };
 
       reply.setCookie(AUTH_TOKEN, AccessToken, {
@@ -190,6 +158,7 @@ export const userController: FastifyPluginCallback = (server, options, done) => 
           secure: process.env.NODE_ENV === "production",
           sameSite: "strict" as "strict" | "lax" | "none",
           path: "/",
+          domain: ".jonathanmau.com",
         };
 
         reply.setCookie(AUTH_TOKEN, AccessToken, cookieConfig);
