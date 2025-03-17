@@ -30,6 +30,27 @@ export const userGetMeResponseSchema: FastifySchema = {
     },
   },
 };
+
+export const userGetAuth: FastifySchema = {
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        authToken: {
+          type: "string",
+        },
+      },
+      required: ["authToken"],
+    },
+    403: {
+      type: "object",
+      properties: {
+        error: { type: "string" },
+      },
+      required: ["error"],
+    },
+  },
+};
 export const userSignUpRequestSchema: FastifySchema = {
   body: {
     type: "object",

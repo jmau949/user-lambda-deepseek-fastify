@@ -1,5 +1,5 @@
 const corsConfig = {
-  dev: {
+  development: {
     origin: "http://localhost:5173", // Allow local development frontend
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Added OPTIONS for preflight
     credentials: true, // Allow credentials to be included

@@ -15,14 +15,13 @@ import {
   userVerifyResponseSchema,
   userLoginRequestSchema,
   userLoginResponseSchema,
-  userUpdateRequestSchema,
-  userUpdateResponseSchema,
   userForgotPasswordRequestSchema,
   userForgotPasswordResponseSchema,
   userConfirmForgotPasswordRequestSchema,
   userConfirmForgotPasswordResponseSchema,
   userResendConfirmationCodeRequestSchema,
   userResendConfirmationCodeResponseSchema,
+  userGetAuth,
 } from "./schemas/user.schemas";
 
 import { userService } from "../services/user-service";
@@ -46,6 +45,39 @@ export const userController: FastifyPluginCallback = (server, options, done) => 
         reply.clearCookie("authToken");
         reply.clearCookie("refreshToken");
         reply.clearCookie("email");
+        return sendErrorResponse(reply, error);
+      }
+    }
+  );
+  server.get(
+    "/get-auth-token",
+    {
+      schema: {
+        response: userGetAuth.response,
+      },
+    },
+    async (request, reply) => {
+      try {
+        const allowedOrigins = [
+          "https://ai.jonathanmau.com",
+          "https://www.ai.jonathanmau.com",
+          "https://api.jonathanmau.com",
+        ];
+        console.log("requestOrigin", request.headers.origin);
+        console.log("process.env.NODE_ENV", process.env.NODE_ENV);
+        if (process.env.NODE_ENV === "development") {
+          allowedOrigins.push("http://localhost:5173");
+        }
+        const requestOrigin = request.headers.origin;
+        console.log("requestOrigin11111", requestOrigin);
+        console.log("allowedOrigins222222", allowedOrigins);
+        if (requestOrigin && !allowedOrigins.includes(requestOrigin)) {
+          return reply.status(403).send({ error: "Forbidden" }); // Proper response handling
+        }
+        console.log("HERERERE");
+        const authToken = request.cookies.authToken;
+        return reply.send({ authToken });
+      } catch (error) {
         return sendErrorResponse(reply, error);
       }
     }

@@ -32,7 +32,7 @@ const app: FastifyInstance = fastify({
 
 // Register plugins
 const registerPlugins = () => {
-  const env = (process.env.NODE_ENV as keyof typeof corsConfig) || "dev";
+  const env = (process.env.NODE_ENV as keyof typeof corsConfig) || "development";
 
   // Register Sentry monitoring first
   app.register(sentryMonitoring);

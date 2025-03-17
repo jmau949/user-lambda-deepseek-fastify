@@ -2,7 +2,7 @@ import { CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-
 import * as dotenv from "dotenv";
 
 // Load the appropriate .env file based on the NODE_ENV environment variable
-const env: string = process.env.NODE_ENV || "dev"; // Default to 'dev' if NODE_ENV is not set
+const env: string = process.env.NODE_ENV || "development"; // Default to 'dev' if NODE_ENV is not set
 dotenv.config({ path: `.env.${env}` });
 
 // Initialize Cognito client

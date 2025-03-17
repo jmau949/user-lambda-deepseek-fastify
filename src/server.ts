@@ -44,7 +44,7 @@ class Application {
   }
 
   registerPlugins() {
-    const env = (process.env.NODE_ENV as keyof typeof corsConfig) || "dev";
+    const env = (process.env.NODE_ENV as keyof typeof corsConfig) || "development";
     // Register Sentry monitoring first
     this.server.register(sentryMonitoring);
     // Register security plugins
