@@ -8,14 +8,13 @@ const corsConfig = {
   },
   production: {
     origin: [
-      "https://jonathanmau.com",
-      "https://www.jonathanmau.com",
       "https://ai.jonathanmau.com",
       "https://www.ai.jonathanmau.com",
+      "https://api.jonathanmau.com", // Add this line
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Added OPTIONS for preflight
     credentials: true, // Enable credentials for cookies
-    allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID"], // Ensure consistent casing
+    allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID", "Cookie"], // Ensure consistent casing
     exposedHeaders: ["X-Request-ID"],
   },
 };
