@@ -59,7 +59,7 @@ Parameters:
 Globals:
   Function:
     Timeout: 30
-    MemorySize: 128
+    MemorySize: 1024
     Environment:
       Variables:
         NODE_ENV: !Ref Environment
@@ -96,7 +96,7 @@ Resources:
     Properties:
       CodeUri: ./dist
       Handler: lambda.handler
-      Runtime: nodejs18.x
+      Runtime: nodejs20.x
       Architectures:
         - arm64
       MemorySize: 1024
