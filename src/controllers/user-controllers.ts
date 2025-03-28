@@ -112,7 +112,7 @@ export const userController: FastifyPluginCallback = (server, options, done) => 
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict" as "strict" | "lax" | "none",
         path: "/",
-        domain: ".jonathanmau.com",
+        domain: process.env.NODE_ENV === "production" ? ".jonathanmau.com" : "localhost",
       };
 
       reply.setCookie(AUTH_TOKEN, AccessToken, {
@@ -158,7 +158,7 @@ export const userController: FastifyPluginCallback = (server, options, done) => 
           secure: process.env.NODE_ENV === "production",
           sameSite: "strict" as "strict" | "lax" | "none",
           path: "/",
-          domain: ".jonathanmau.com",
+          domain: process.env.NODE_ENV === "production" ? ".jonathanmau.com" : "localhost",
         };
 
         reply.setCookie(AUTH_TOKEN, AccessToken, cookieConfig);
