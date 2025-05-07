@@ -313,3 +313,31 @@ export const userResendConfirmationCodeResponseSchema = {
     },
   },
 };
+
+export const userSupportRequestSchema: FastifySchema = {
+  body: {
+    type: "object",
+    properties: {
+      email: { type: "string", format: "email" },
+      message: { type: "string", minLength: 1 },
+    },
+    required: ["message"],
+  },
+};
+
+export const userSupportResponseSchema: FastifySchema = {
+  response: {
+    200: {
+      type: "object",
+      properties: {},
+    },
+    400: {
+      type: "object",
+      properties: {
+        error: { type: "string" },
+        errorCode: { type: "string" },
+      },
+      required: ["error"],
+    },
+  },
+};

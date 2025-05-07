@@ -5,6 +5,7 @@ import {
   IUserEmail,
   IUserForgotPassword,
   IUserResendConfirmationCode,
+  IUserSupportRequest,
   IUserVerify,
 } from "./interface/user.interface";
 import {
@@ -22,6 +23,8 @@ import {
   userResendConfirmationCodeRequestSchema,
   userResendConfirmationCodeResponseSchema,
   userGetAuth,
+  userSupportRequestSchema,
+  userSupportResponseSchema,
 } from "./schemas/user.schemas";
 
 import { userService } from "../services/user-service";
@@ -230,6 +233,28 @@ export const userController: FastifyPluginCallback = (server, options, done) => 
       try {
         const { email } = request.body.user;
         await userService.resendConfirmationCode(email);
+        return reply.code(200).send({});
+      } catch (error) {
+        return sendErrorResponse(reply, error);
+      }
+    }
+  );
+
+  // Support request endpoint
+  server.post<{ Body: IUserSupportRequest }>(
+    "/support",
+    {
+      schema: {
+        body: userSupportRequestSchema.body,
+        response: userSupportResponseSchema.response,
+      },
+    },
+    async (request, reply) => {
+      try {
+        await userService.submitSupportRequest({
+          email: request.body.email,
+          message: request.body.message,
+        });
         return reply.code(200).send({});
       } catch (error) {
         return sendErrorResponse(reply, error);

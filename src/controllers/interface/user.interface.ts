@@ -49,3 +49,8 @@ export interface IUserResendConfirmationCode {
     email: string;
   };
 }
+
+export interface IUserSupportRequest {
+  email?: string;
+  message: string;
+}

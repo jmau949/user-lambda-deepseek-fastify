@@ -12,7 +12,8 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 import cognitoClient from "../config/cognito";
 import { calculateSecretHash } from "../utils/crypto-utils";
-import { REFRESH_TOKEN_AUTH } from "../config/constants";
+import { REFRESH_TOKEN_AUTH, SUPPORT_EMAIL } from "../config/constants";
+import { sendEmail } from "./email-service";
 const USER_POOL_ID = process.env.AWS_COGNITO_USER_POOL_ID;
 const CLIENT_ID = process.env.AWS_COGNITO_CLIENT_ID;
 const CLIENT_SECRET = process.env.AWS_COGNITO_CLIENT_SECRET;
@@ -156,5 +157,24 @@ export const userService = {
 
     const response = await cognitoClient.send(command);
     return response.AuthenticationResult;
+  },
+
+  async submitSupportRequest({ email, message }: { email?: string; message: string }) {
+    const formattedMessage = `Support Request Details:
+      -----------------------
+      From: ${email || "Anonymous"}
+      Message: ${message}
+      Date: ${new Date().toISOString()}
+      `;
+
+    await sendEmail({
+      to: SUPPORT_EMAIL,
+      from: SUPPORT_EMAIL,
+      subject: `New Support Request ${email ? `from ${email}` : ""}`,
+      text: formattedMessage,
+      ...(email && { replyTo: email }),
+    });
+
+    return true;
   },
 };
